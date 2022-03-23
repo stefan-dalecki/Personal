@@ -2,6 +2,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import numpy as np
 from collections import defaultdict
+from itertools import chain
 
 auth_manager = SpotifyClientCredentials()
 sp = spotipy.Spotify(auth_manager=auth_manager)
@@ -18,9 +19,11 @@ class Songs:
         self.playlists = []
 
     def __call__(self):
-        print(f'{len(self.songs)} Total Songs')
-        Songs.interalbum_duplicates(self)
+        print('~~~CALL BEGUN~~~', end='\n'*2)
+        print(f'{len(self.songs)} Total Songs', end='\n'*2)
         Songs.intraalbum_duplicates(self)
+        Songs.interalbum_duplicates(self)
+        print('\n~~~CALL ENDED~~~', end='\n'*2)
 
     def playlists(user):
         return sp.user_playlists(user=user)
@@ -49,13 +52,40 @@ class Songs:
             dupmonths = [months[i] for i in dup[1]]
             dup[1] = dupmonths
         if dupartsong:
+            print('\ninter-album duplicates found')
             for i in dupartsong:
                 print(i)
         else:
-            print('no inter-album duplicates found')
+            print('\nno inter-album duplicates found')
 
     def intraalbum_duplicates(self):
-        pass
+        playsongs = [self.songs[i:i+15] for i in range(0, len(self.songs), 15)]
+        intradups = []
+        for i, playlist in enumerate(playsongs):
+            artists = [(i[2]) for i in playlist]
+            songs = [i[1] for i in playlist]
+            month = playlist[3][0]
+            tally = defaultdict(list)
+            for i, item in enumerate(artists):
+                tally[item].append(i)
+            dupartist = sorted([key, locs] for key, locs in tally.items() if len(locs)>1)
+            if dupartist:
+                for i in dupartist[0][1]:
+                    i=songs[i]
+                    dupartist.append(i)
+                del dupartist[0][1]
+                dupartist[0]=dupartist[0][0]
+                dupartist.insert(0, month)
+                intradups.append(dupartist)
+        if intradups:
+            print('\nintra-album duplicate(s) found')
+            for dup in intradups:
+                print(f'\n-{dup[0]}\n--{dup[1]}')
+                for song in dup[2:]:
+                    print(f'---{song}')
+
+        else:
+            print('\nno intra-album duplicates found')
 
 music = Songs()
 while playlists:
