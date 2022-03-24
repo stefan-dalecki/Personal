@@ -8,6 +8,7 @@ auth_manager = SpotifyClientCredentials()
 sp = spotipy.Spotify(auth_manager=auth_manager)
 
 playlists = sp.user_playlists(user='sdalecki')
+
 months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
           'August', 'September', 'October', 'November', 'December']
 monaten = ['Januar', 'Febuar', 'Marz', 'April', 'Mai', 'Juni', 'Juli',
@@ -16,17 +17,17 @@ monaten = ['Januar', 'Febuar', 'Marz', 'April', 'Mai', 'Juni', 'Juli',
 class Songs:
     def __init__(self):
         self.songs = []
-        self.playlists = []
 
     def __call__(self):
+        Songs.playlistgen(self)
         print('~~~CALL BEGUN~~~', end='\n'*2)
         print(f'{len(self.songs)} Total Songs', end='\n'*2)
         Songs.intraalbum_duplicates(self)
         Songs.interalbum_duplicates(self)
         print('\n~~~CALL ENDED~~~', end='\n'*2)
 
-    def playlists(user):
-        return sp.user_playlists(user=user)
+    def playlistgen(self):
+        self.playlists = Songs.playlistsplit(self.songs, 0)
 
     def songs_for_emily(self, playlist, months):
         if playlist['name'] in months:
@@ -39,6 +40,20 @@ class Songs:
                 except Exception:
                     continue
                 self.songs += [id]
+
+    def playlistsplit(exlist, ele):
+        elelist = [i[ele] for i in exlist]
+        cur = elelist[0]
+        ind = [1, len(exlist)]
+        for i, val in enumerate(elelist):
+            if val != cur:
+                ind.append(i)
+                cur = val
+        playlists = []
+        ind.sort()
+        for a, b in zip(ind, ind[1:]):
+            playlists.append(exlist[a:b])
+        return playlists
 
     def interalbum_duplicates(self):
         artsong = [i[1:] for i in self.songs]
@@ -59,9 +74,8 @@ class Songs:
             print('\nno inter-album duplicates found')
 
     def intraalbum_duplicates(self):
-        playsongs = [self.songs[i:i+15] for i in range(0, len(self.songs), 15)]
         intradups = []
-        for i, playlist in enumerate(playsongs):
+        for i, playlist in enumerate(self.playlists):
             artists = [(i[2]) for i in playlist]
             songs = [i[1] for i in playlist]
             month = playlist[3][0]
