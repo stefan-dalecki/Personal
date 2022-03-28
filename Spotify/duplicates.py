@@ -17,6 +17,7 @@ monaten = ['Januar', 'Febuar', 'Marz', 'April', 'Mai', 'Juni', 'Juli',
 class Songs:
     def __init__(self):
         self.songs = []
+        self.playlists = None
 
     def __call__(self):
         Songs.playlistgen(self)
