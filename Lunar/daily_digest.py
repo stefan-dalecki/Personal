@@ -62,11 +62,11 @@ class NextMoon:
 
     def __call__(self) -> str:
         if self.days == 0:
-            return "CHECK IT OUT. There's a full moon today!"
+            return "\U0001F315   CHECK IT OUT. There's a full moon today!   \U0001F315"
         if self.days == 1:
-            return "There will be a full moon tomorrow"
+            return "\U0001F391   There will be a full moon tomorrow   \U0001F391"
         else:
-            return f"{self.days} days until next full moon"
+            return f"\U00002653   {self.days} days until next full moon   \U00002653"
 
 
 class Email:
@@ -76,7 +76,6 @@ class Email:
         self,
         *,
         contents: str,
-        attachments: str = None,
     ) -> None:
         self._sender = "my email"
         self._recipient = "emfekk@aol.com"
@@ -84,17 +83,11 @@ class Email:
         day = ordinal(int(intro[-2:]))
         self._subject = intro[:-2] + day
         self._contents = f"Dearest Emily,\n\n{contents}"
-        self._attachments = attachments
 
     def send_email(self) -> None:
         """Send the actual email"""
         yag = yagmail.SMTP(self._sender)
-        yag.send(
-            to=self._recipient,
-            subject=self._subject,
-            contents=self._contents,
-            attachments=self._attachments,
-        )
+        yag.send(to=self._recipient, subject=self._subject, contents=self._contents)
 
     def __str__(self) -> str:
         summary = (
@@ -142,9 +135,10 @@ if __name__ == "__main__":
 
     body = f"{daily_horoscope()}\n\n{upcoming_moon()}"
     email = Email(contents=body)
+    print(email)
 
-    scheduler = Scheduler()
-    scheduler.start()
-    scheduler.schedule_daily(email.send_email)
-    time.sleep(60)
-    scheduler.stop()
+    # scheduler = Scheduler()
+    # scheduler.start()
+    # scheduler.schedule_daily(email.send_email)
+    # time.sleep(60)
+    # scheduler.stop()
