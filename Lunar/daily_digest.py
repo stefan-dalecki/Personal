@@ -4,6 +4,9 @@ import pandas as pd
 from datetime import datetime
 from pathlib import Path
 import yagmail
+import threading
+import schedule
+import time
 
 ordinal = lambda n: "%d%s" % (
     n,
@@ -89,14 +92,39 @@ class Email:
         return summary
 
 
-path = Path.cwd()
+class Scheduler(threading.Thread):
+    def __init__(self) -> None:
+        super().__init__()
+        self.__stop_running = threading.Event()
 
-site = r"https://www.astrology.com/horoscope/daily/pisces.html"
-daily_horoscope = Horoscope(site).get_text()
+    def schedule_daily(self, job):
+        schedule.clear()
+        schedule.every().day.at("06:30").do(job)
 
-moon_csv = path.joinpath(r"full_moons.csv")
-upcoming_moon = NextMoon(moon_csv).when()
+    def run(self):
+        self.__stop_running.clear()
+        while not self.__stop_running.is_set():
+            schedule.run_pending()
+            time.sleep(1)
 
-body = f"{daily_horoscope()}\n\n{upcoming_moon()}"
-email = Email(contents=body)
-print(email)
+    def stop(self):
+        self.__stop_running.set()
+
+
+if __name__ == "__main__":
+    path = Path.cwd()
+
+    site = r"https://www.astrology.com/horoscope/daily/pisces.html"
+    daily_horoscope = Horoscope(site).get_text()
+
+    moon_csv = path.joinpath(r"full_moons.csv")
+    upcoming_moon = NextMoon(moon_csv).when()
+
+    body = f"{daily_horoscope()}\n\n{upcoming_moon()}"
+    email = Email(contents=body)
+
+    scheduler = Scheduler()
+    scheduler.start()
+    scheduler.schedule_daily(email.send_email)
+    time.sleep(60)
+    scheduler.stop()
