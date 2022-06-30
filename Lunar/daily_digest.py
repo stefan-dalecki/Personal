@@ -1,12 +1,14 @@
+"""Send a daily witchy email to Emily"""
+
+from datetime import datetime
+import threading
+import time
+from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-from datetime import datetime
-from pathlib import Path
 import yagmail
-import threading
 import schedule
-import time
 
 ordinal = lambda n: "%d%s" % (
     n,
@@ -15,11 +17,18 @@ ordinal = lambda n: "%d%s" % (
 
 
 class Horoscope:
+    """A daily pisces horoscope"""
+
     def __init__(self, website: str) -> None:
         self._request = requests.get(website)
         self.text = ""
 
     def get_text(self):
+        """Get the horoscope text from the internet
+
+        Returns:
+            object: self
+        """
         soup = BeautifulSoup(self._request.content, "html.parser")
         s = soup.find("div", class_="horoscope-content-wrapper")
         content = s.find_all("p")
@@ -32,12 +41,15 @@ class Horoscope:
 
 
 class NextMoon:
+    """When is the next full moon?"""
+
     def __init__(self, csv: str) -> None:
         self._csv = pd.read_csv(csv)
         self._today = datetime.now()
         self.days = None
 
     def when(self) -> None:
+        """Figure out when"""
         next_moon = datetime.strptime(
             self._csv[self._csv["Month"] == self._today.strftime("%B")]["Date"].values[
                 0
@@ -51,13 +63,15 @@ class NextMoon:
     def __call__(self) -> str:
         if self.days == 0:
             return "CHECK IT OUT. There's a full moon today!"
-        elif self.days == 1:
+        if self.days == 1:
             return "There will be a full moon tomorrow"
         else:
             return f"{self.days} days until next full moon"
 
 
 class Email:
+    """Send an email to Emily"""
+
     def __init__(
         self,
         *,
@@ -73,6 +87,7 @@ class Email:
         self._attachments = attachments
 
     def send_email(self) -> None:
+        """Send the actual email"""
         yag = yagmail.SMTP(self._sender)
         yag.send(
             to=self._recipient,
@@ -93,21 +108,26 @@ class Email:
 
 
 class Scheduler(threading.Thread):
+    """When should the email be sent"""
+
     def __init__(self) -> None:
         super().__init__()
         self.__stop_running = threading.Event()
 
     def schedule_daily(self, job):
+        """Send the email each day"""
         schedule.clear()
         schedule.every().day.at("06:30").do(job)
 
     def run(self):
+        """Do the actual job"""
         self.__stop_running.clear()
         while not self.__stop_running.is_set():
             schedule.run_pending()
             time.sleep(1)
 
     def stop(self):
+        """Stop doing the job"""
         self.__stop_running.set()
 
 
