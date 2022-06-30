@@ -5,6 +5,11 @@ from datetime import datetime
 from pathlib import Path
 import yagmail
 
+ordinal = lambda n: "%d%s" % (
+    n,
+    "tsnrhtdd"[(n // 10 % 10 != 1) * (n % 10 < 4) * n % 10 :: 4],
+)
+
 
 class Horoscope:
     def __init__(self, website: str) -> None:
@@ -19,6 +24,9 @@ class Horoscope:
             self.text += f"{line.text} "
         return self
 
+    def __call__(self) -> str:
+        return self.text
+
 
 class NextMoon:
     def __init__(self, csv: str) -> None:
@@ -26,7 +34,7 @@ class NextMoon:
         self._today = datetime.now()
         self.days = None
 
-    def when(self):
+    def when(self) -> None:
         next_moon = datetime.strptime(
             self._csv[self._csv["Month"] == self._today.strftime("%B")]["Date"].values[
                 0
@@ -35,25 +43,30 @@ class NextMoon:
         )
         time_between = self._today - next_moon
         self.days = time_between.days
+        return self
+
+    def __call__(self) -> str:
+        if self.days == 0:
+            return "CHECK IT OUT. There's a full moon today!"
+        elif self.days == 1:
+            return "There will be a full moon tomorrow"
+        else:
+            return f"{self.days} days until next full moon"
 
 
 class Email:
     def __init__(
         self,
-        horoscope: str,
-        until_next: int,
         *,
         contents: str,
         attachments: str = None,
     ) -> None:
-        self.horoscope = horoscope
-        self.until_next = until_next
         self._sender = "my email"
         self._recipient = "emfekk@aol.com"
-        self._subject = "Emily's Daily Witchy Email ---" + datetime.today().strftime(
-            "%B %d"
-        )
-        self._contents = contents
+        intro = "Emily's Daily Witchy Email --- " + datetime.today().strftime("%B %d")
+        day = ordinal(int(intro[-2:]))
+        self._subject = intro[:-2] + day
+        self._contents = f"Dearest Emily,\n\n{contents}"
         self._attachments = attachments
 
     def send_email(self) -> None:
@@ -65,6 +78,16 @@ class Email:
             attachments=self._attachments,
         )
 
+    def __str__(self) -> str:
+        summary = (
+            f"From : {self._sender}\n"
+            + f"To : {self._recipient}\n\n"
+            + f"Subject : {self._subject}\n\n"
+            + f"Body : {self._contents}\n\n"
+            + "Love,\n   Stefan\n"
+        )
+        return summary
+
 
 path = Path.cwd()
 
@@ -73,3 +96,7 @@ daily_horoscope = Horoscope(site).get_text()
 
 moon_csv = path.joinpath(r"full_moons.csv")
 upcoming_moon = NextMoon(moon_csv).when()
+
+body = f"{daily_horoscope()}\n\n{upcoming_moon()}"
+email = Email(contents=body)
+print(email)
