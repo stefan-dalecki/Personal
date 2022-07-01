@@ -57,7 +57,7 @@ class NextMoon:
             r"%m/%d/%Y",
         )
         time_between = self._today - next_moon
-        self.days = time_between.days
+        self.days = abs(time_between.days)
         return self
 
     def __call__(self) -> str:
@@ -77,7 +77,7 @@ class Email:
         *,
         contents: str,
     ) -> None:
-        self._sender = "my email"
+        self._sender = "dailynuggetnews@gmail.com"
         self._recipient = "emfekk@aol.com"
         intro = "Emily's Daily Witchy Email --- " + datetime.today().strftime("%B %d")
         day = ordinal(int(intro[-2:]))
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     site = r"https://www.astrology.com/horoscope/daily/pisces.html"
     daily_horoscope = Horoscope(site).get_text()
 
-    moon_csv = path.joinpath(r"full_moons.csv")
+    moon_csv = path.joinpath(r"Lunar\\full_moons.csv")
     upcoming_moon = NextMoon(moon_csv).when()
 
     body = f"{daily_horoscope()}\n\n{upcoming_moon()}"
