@@ -78,7 +78,7 @@ class Email:
         contents: str,
     ) -> None:
         self._sender = "dailynuggetnews@gmail.com"
-        self._recipient = "emfekk@aol.com"
+        self._recipient = "sjdalecki@gmail.com"
         intro = "Emily's Daily Witchy Email --- " + datetime.today().strftime("%B %d")
         day = ordinal(int(intro[-2:]))
         self._subject = intro[:-2] + day
@@ -86,7 +86,7 @@ class Email:
 
     def send_email(self) -> None:
         """Send the actual email"""
-        yag = yagmail.SMTP(self._sender)
+        yag = yagmail.SMTP(self._sender, oauth2_file=path.joinpath("credentials.json"))
         yag.send(to=self._recipient, subject=self._subject, contents=self._contents)
 
     def __str__(self) -> str:
@@ -110,7 +110,7 @@ class Scheduler(threading.Thread):
     def schedule_daily(self, job):
         """Send the email each day"""
         schedule.clear()
-        schedule.every().day.at("06:30").do(job)
+        schedule.every().day.at("16:12").do(job)
 
     def run(self):
         """Do the actual job"""
@@ -130,15 +130,13 @@ if __name__ == "__main__":
     site = r"https://www.astrology.com/horoscope/daily/pisces.html"
     daily_horoscope = Horoscope(site).get_text()
 
-    moon_csv = path.joinpath(r"Lunar\\full_moons.csv")
+    moon_csv = path.joinpath(r"full_moons.csv")
     upcoming_moon = NextMoon(moon_csv).when()
 
-    body = f"{daily_horoscope()}\n\n{upcoming_moon()}"
+    body = f"{daily_horoscope()}\n\n{upcoming_moon()}\nLove,\n   Stefan"
     email = Email(contents=body)
-    print(email)
 
-    # scheduler = Scheduler()
-    # scheduler.start()
-    # scheduler.schedule_daily(email.send_email)
-    # time.sleep(60)
-    # scheduler.stop()
+    scheduler = Scheduler()
+    scheduler.start()
+    scheduler.schedule_daily(email.send_email)
+    scheduler.run()
