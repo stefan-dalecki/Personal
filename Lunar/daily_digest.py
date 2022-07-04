@@ -74,8 +74,7 @@ class NextMoon:
             return "\U0001F315   CHECK IT OUT. The '{self._moon_type}' is out tonight!   \U0001F315"
         if self.days == 1:
             return "\U0001F391   There will be a full moon tomorrow   \U0001F391"
-        else:
-            return f"\U00002653   {self.days} days until next full moon   \U00002653"
+        return f"\U00002653   {self.days} days until next full moon   \U00002653"
 
 
 class Email:
@@ -143,6 +142,7 @@ if __name__ == "__main__":
 
     body = f"{daily_horoscope()}\n\n{upcoming_moon()}"
     email = Email(contents=body)
+    print(email)
     # scheduler = Scheduler()
     # scheduler.start()
     # scheduler.schedule_daily(email.send_email)
