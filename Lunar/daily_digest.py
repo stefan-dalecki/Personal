@@ -1,5 +1,4 @@
 """Send a daily witchy email to Emily"""
-
 from datetime import datetime, date
 import threading
 import time
@@ -16,41 +15,31 @@ ordinal = lambda n: "%d%s" % (
 )
 
 
-class Horoscope:
-    """A daily pisces horoscope"""
+class Email:
+    """Send an email to Emily"""
 
-    def __init__(self, website: str) -> None:
-        self._request = requests.get(website)
-        self.text = ""
-
-    def get_text(self):
-        """Get the horoscope text from the internet
-
-        Returns:
-            object: self
-        """
-        soup = BeautifulSoup(self._request.content, "html.parser")
-        s = soup.find("div", class_="horoscope-content-wrapper")
-        content = s.find_all("p")
-        for line in content:
-            self.text += f"{line.text} "
-        return self
-
-    def __call__(self) -> str:
-        return self.text
-
-
-class NextMoon:
-    """When is the next full moon?"""
-
-    def __init__(self, csv: str) -> None:
-        self._csv = pd.read_csv(csv)
+    def __init__(
+        self,
+        *,
+        moon_df: pd.DataFrame,
+        website: str,
+    ) -> None:
+        self._csv = moon_df
         self._today = date.today()
         self._moon_type = None
-        self.days = None
+        self._days = None
+        self._request = requests.get(website)
+        self.text = ""
+        self._sender = "dailynuggetnews@gmail.com"
+        self._recipient = "sjdalecki@gmail.com"
+        intro = "Emily's Daily Witchy Email --- " + datetime.today().strftime("%B %d")
+        day = ordinal(int(intro[-2:]))
+        self._subject = intro[:-2] + day
+        self._contents = None
 
-    def when(self) -> None:
-        """Figure out when"""
+    def get_contents(self):
+        """Get email body contents"""
+        when = None
         current_row = self._csv[self._csv["Month"] == self._today.strftime("%B")]
         next_moon = datetime.strptime(
             current_row["Date"].values[0],
@@ -63,34 +52,24 @@ class NextMoon:
                 correct_row["Date"].values[0], r"%m/%d/%Y"
             ).date()
             time_between = next_moon - self._today
-        self.days = time_between.days
-        return self
-
-    def __call__(self) -> str:
-        if self.days == 0:
+        self._days = time_between.days
+        if self._days == 0:
             self._moon_type = self._csv[
                 self._csv["Month"] == self._today.strftime("%B")
             ]["Name"].values[0]
-            return "\U0001F315   CHECK IT OUT. The '{self._moon_type}' is out tonight!   \U0001F315"
-        if self.days == 1:
-            return "\U0001F391   There will be a full moon tomorrow   \U0001F391"
-        return f"\U00002653   {self.days} days until next full moon   \U00002653"
-
-
-class Email:
-    """Send an email to Emily"""
-
-    def __init__(
-        self,
-        *,
-        contents: str,
-    ) -> None:
-        self._sender = "dailynuggetnews@gmail.com"
-        self._recipient = "sjdalecki@gmail.com"
-        intro = "Emily's Daily Witchy Email --- " + datetime.today().strftime("%B %d")
-        day = ordinal(int(intro[-2:]))
-        self._subject = intro[:-2] + day
-        self._contents = f"Dearest Emily,\n\n{contents}\n\nLove,\n   Stefan\n"
+            when = "\U0001F315   CHECK IT OUT. The '{self._moon_type}' is out tonight!   \U0001F315"
+        elif self._days == 1:
+            when = "\U0001F391   There will be a full moon tomorrow   \U0001F391"
+        else:
+            when = f"\U00002653   {self._days} days until next full moon   \U00002653"
+        text = ""
+        soup = BeautifulSoup(self._request.content, "html.parser")
+        s = soup.find("div", class_="horoscope-content-wrapper")
+        content = s.find_all("p")
+        for line in content:
+            text += f"{line.text} "
+        self._contents = f"Dearest Emily,\n\n{text}\n\n{when}\n\nLove,\n   Stefan\n"
+        return self
 
     def send_email(self) -> None:
         """Send the actual email"""
@@ -117,7 +96,7 @@ class Scheduler(threading.Thread):
     def schedule_daily(self, job):
         """Set the email time"""
         schedule.clear()
-        schedule.every().day.at("06:30").do(job)
+        schedule.every().day.at("13:12").do(job)
 
     def run(self):
         """Send the email at the established time"""
@@ -131,19 +110,22 @@ class Scheduler(threading.Thread):
         self.__stop_running.set()
 
 
+class Proxy:
+    def __init__(self, horoscope, moons):
+        self._horoscope = horoscope
+        self._moons = pd.read_csv(moons)
+
+
 if __name__ == "__main__":
     path = Path.cwd()
 
     site = r"https://www.astrology.com/horoscope/daily/pisces.html"
-    daily_horoscope = Horoscope(site).get_text()
 
-    moon_csv = path.joinpath(r"full_moons.csv")
-    upcoming_moon = NextMoon(moon_csv).when()
+    moon_csv = pd.read_csv(path.joinpath(r"full_moons.csv"))
 
-    body = f"{daily_horoscope()}\n\n{upcoming_moon()}"
-    email = Email(contents=body)
-    print(email)
-    # scheduler = Scheduler()
-    # scheduler.start()
-    # scheduler.schedule_daily(email.send_email)
-    # scheduler.run()
+    scheduler = Scheduler()
+    scheduler.start()
+    scheduler.schedule_daily(
+        job=Email(moon_df=moon_csv, website=site).get_contents().send_email
+    )
+    scheduler.run()
