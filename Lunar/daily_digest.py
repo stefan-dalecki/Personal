@@ -96,7 +96,7 @@ class Scheduler(threading.Thread):
     def schedule_daily(self, job):
         """Set the email time"""
         schedule.clear()
-        schedule.every().day.at("13:12").do(job)
+        schedule.every().day.at("07:00").do(job)
 
     def run(self):
         """Send the email at the established time"""
