@@ -28,10 +28,10 @@ class Email:
         self._today = date.today()
         self._moon_type = None
         self._days = None
-        self._request = requests.get(website)
+        self._request = requests.get(website, timeout=30)
         self.text = ""
         self._sender = "dailynuggetnews@gmail.com"
-        self._recipient = "sjdalecki@gmail.com"
+        self._recipient = "emfekk@aol.com"
         intro = "Emily's Daily Witchy Email --- " + datetime.today().strftime("%B %d")
         day = ordinal(int(intro[-2:]))
         self._subject = intro[:-2] + day
@@ -57,7 +57,7 @@ class Email:
             self._moon_type = self._csv[
                 self._csv["Month"] == self._today.strftime("%B")
             ]["Name"].values[0]
-            when = "\U0001F315   CHECK IT OUT. The '{self._moon_type}' is out tonight!   \U0001F315"
+            when = f"\U0001F315   CHECK IT OUT. The ~~~{self._moon_type}~~~ is out tonight!   \U0001F315"
         elif self._days == 1:
             when = "\U0001F391   There will be a full moon tomorrow   \U0001F391"
         else:
@@ -73,7 +73,7 @@ class Email:
 
     def send_email(self) -> None:
         """Send the actual email"""
-        yag = yagmail.SMTP(self._sender, oauth2_file=path.joinpath("credentials.json"))
+        yag = yagmail.SMTP(self._sender)
         yag.send(to=self._recipient, subject=self._subject, contents=self._contents)
 
     def __str__(self) -> str:
@@ -110,22 +110,16 @@ class Scheduler(threading.Thread):
         self.__stop_running.set()
 
 
-class Proxy:
-    def __init__(self, horoscope, moons):
-        self._horoscope = horoscope
-        self._moons = pd.read_csv(moons)
-
-
 if __name__ == "__main__":
     path = Path.cwd()
 
-    site = r"https://www.astrology.com/horoscope/daily/pisces.html"
+    SITE = r"https://www.astrology.com/horoscope/daily/pisces.html"
 
     moon_csv = pd.read_csv(path.joinpath(r"full_moons.csv"))
-
+    # Email(moon_df=moon_csv, website=SITE).get_contents().send_email()
     scheduler = Scheduler()
     scheduler.start()
     scheduler.schedule_daily(
-        job=Email(moon_df=moon_csv, website=site).get_contents().send_email
+        job=Email(moon_df=moon_csv, website=SITE).get_contents().send_email
     )
     scheduler.run()
