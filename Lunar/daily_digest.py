@@ -104,7 +104,7 @@ class Scheduler(threading.Thread):
         self.__stop_running.clear()
         while not self.__stop_running.is_set():
             schedule.run_pending()
-            time.sleep(1)
+            time.sleep(30)
 
     def stop(self):
         """Stop doing the job"""
