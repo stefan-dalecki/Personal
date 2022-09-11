@@ -75,6 +75,7 @@ class Email:
         """Send the actual email"""
         yag = yagmail.SMTP(self._sender)
         yag.send(to=self._recipient, subject=self._subject, contents=self._contents)
+        print(f"Email sent successfully at {datetime.now()}")
 
     def __str__(self) -> str:
         summary = (
