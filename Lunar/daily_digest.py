@@ -16,7 +16,7 @@ ordinal = lambda n: "%d%s" % (
 
 
 class Email:
-    """Send an email to Emily"""
+    """Generate email payload"""
 
     def __init__(
         self,
@@ -87,40 +87,13 @@ class Email:
         return summary
 
 
-class Scheduler(threading.Thread):
-    """When should the email be sent"""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.__stop_running = threading.Event()
-
-    def schedule_daily(self, job):
-        """Set the email time"""
-        schedule.clear()
-        schedule.every().day.at("07:00").do(job)
-
-    def run(self):
-        """Send the email at the established time"""
-        self.__stop_running.clear()
-        while not self.__stop_running.is_set():
-            schedule.run_pending()
-            time.sleep(30)
-
-    def stop(self):
-        """Stop doing the job"""
-        self.__stop_running.set()
-
-
 if __name__ == "__main__":
     path = Path.cwd()
-
     SITE = r"https://www.astrology.com/horoscope/daily/pisces.html"
-
     moon_csv = pd.read_csv(path.joinpath(r"full_moons.csv"))
-    # Email(moon_df=moon_csv, website=SITE).get_contents().send_email()
-    scheduler = Scheduler()
-    scheduler.start()
-    scheduler.schedule_daily(
-        job=Email(moon_df=moon_csv, website=SITE).get_contents().send_email
+    schedule.every().day.at("07:00").do(
+        Email(moon_df=moon_csv, website=SITE).send_email()
     )
-    scheduler.run()
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
