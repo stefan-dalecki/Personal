@@ -14,6 +14,12 @@ ordinal = lambda n: "%d%s" % (
     "tsnrhtdd"[(n // 10 % 10 != 1) * (n % 10 < 4) * n % 10 :: 4],
 )
 
+path = Path.cwd()
+
+SITE = r"https://www.astrology.com/horoscope/daily/pisces.html"
+
+moon_csv = pd.read_csv(path.joinpath(r"full_moons.csv"))
+
 
 class Email:
     """Send an email to Emily"""
@@ -87,40 +93,42 @@ class Email:
         return summary
 
 
-class Scheduler(threading.Thread):
-    """When should the email be sent"""
+# class Scheduler(threading.Thread):
+#     """When should the email be sent"""
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.__stop_running = threading.Event()
+#     def __init__(self) -> None:
+#         super().__init__()
+#         self.__stop_running = threading.Event()
 
-    def schedule_daily(self, job):
-        """Set the email time"""
-        schedule.clear()
-        schedule.every().day.at("07:00").do(job)
+#     def schedule_daily(self, job):
+#         """Set the email time"""
+#         schedule.clear()
+#         schedule.every().day.at("07:00").do(job)
 
-    def run(self):
-        """Send the email at the established time"""
-        self.__stop_running.clear()
-        while not self.__stop_running.is_set():
-            schedule.run_pending()
-            time.sleep(30)
+#     def run(self):
+#         """Send the email at the established time"""
+#         self.__stop_running.clear()
+#         while not self.__stop_running.is_set():
+#             schedule.run_pending()
+#             time.sleep(30)
 
-    def stop(self):
-        """Stop doing the job"""
-        self.__stop_running.set()
+#     def stop(self):
+#         """Stop doing the job"""
+#         self.__stop_running.set()
+
+
+def send_scheduled_email():
+    """Send the daily email with one function call"""
+    Email(moon_df=moon_csv, website=SITE).get_contents().send_email()
+
+
+def main():
+    """Main function to send scheduled email"""
+    schedule.every().day.at("07:30").do(send_scheduled_email)
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
 
 
 if __name__ == "__main__":
-    path = Path.cwd()
-
-    SITE = r"https://www.astrology.com/horoscope/daily/pisces.html"
-
-    moon_csv = pd.read_csv(path.joinpath(r"full_moons.csv"))
-    # Email(moon_df=moon_csv, website=SITE).get_contents().send_email()
-    scheduler = Scheduler()
-    scheduler.start()
-    scheduler.schedule_daily(
-        job=Email(moon_df=moon_csv, website=SITE).get_contents().send_email
-    )
-    scheduler.run()
+    main()
