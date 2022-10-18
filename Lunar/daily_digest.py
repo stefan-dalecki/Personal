@@ -22,7 +22,7 @@ moon_csv = pd.read_csv(path.joinpath(r"full_moons.csv"))
 
 
 class Email:
-    """Send an email to Emily"""
+    """Generate email payload"""
 
     def __init__(
         self,
