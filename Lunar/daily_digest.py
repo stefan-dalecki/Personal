@@ -125,7 +125,7 @@ def send_scheduled_email():
 
 def main():
     """Main function to send scheduled email"""
-    schedule.every().day.at("20:43").do(send_scheduled_email)
+    schedule.every().day.at("07:30").do(send_scheduled_email)
     while True:
         schedule.run_pending()
         time.sleep(1)
