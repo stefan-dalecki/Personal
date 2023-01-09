@@ -52,6 +52,7 @@ class Email:
             r"%m/%d/%Y",
         ).date()
         time_between = next_moon - self._today
+        breakpoint()
         if time_between.days < 0:
             correct_row = self._csv.iloc[current_row.index.astype(int) + 1]
             next_moon = datetime.strptime(
@@ -124,7 +125,7 @@ def send_scheduled_email():
 
 def main():
     """Main function to send scheduled email"""
-    schedule.every().day.at("07:30").do(send_scheduled_email)
+    schedule.every().day.at("20:43").do(send_scheduled_email)
     while True:
         schedule.run_pending()
         time.sleep(1)
