@@ -45,7 +45,7 @@ class Email:
 
     def get_contents(self):
         """Get email body contents"""
-        when = None
+        # TODO update handling for multiple full moons in a single month
         current_row = self._csv[self._csv["Month"] == self._today.strftime("%B")]
         next_moon = datetime.strptime(
             current_row["Date"].values[0],
